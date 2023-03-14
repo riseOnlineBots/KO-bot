@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
 
@@ -31,8 +32,6 @@ def press(code):
 
 
 def run():
-    sleep(1)
-
     global purpose
 
     if purpose == PURPOSE.TEST:
@@ -43,42 +42,85 @@ def run():
         # Presses 3.
         press(0x33)
     elif purpose == PURPOSE.TS:
+        sleep(1)
+        mage = True
         # Presses ESC.
         press(0x1B)
         # TS slot (0).
         press(0x30)
         sleep(1)
-        # Presses TAB.
-        press(0x09)
-        sleep(0.5)
-        # Scrolls down.
-        mouse.scroll(0, -1)
-        sleep(0.5)
+
+        if mage:
+            # Death Knight.
+            for i in range(3):
+                # Scrolls down.
+                mouse.scroll(0, -1)
+                sleep(0.5)
+        else:
+            # Presses TAB.
+            press(0x09)
+            sleep(0.5)
+            # Scrolls down (Bulture).
+            mouse.scroll(0, -1)
+            sleep(0.5)
+
         # Presses enter.
         press(0x0D)
         sleep(1)
         press(0x0D)
 
-        # # Loops to "Above 60 lvl".
-        # for i in range(5):
-        #     # Presses arrow down.
-        #     press(0x28)
-        #
-        # # Presses TAB.
-        # press(0x09)
-        #
-        # # Presses Arrow down.
-        # press(0x28)
+        duration_in_seconds = 3600
+        next_use = datetime.now() + timedelta(seconds=duration_in_seconds)
+        print('Next TS use: {:%H:%M:%S}'.format(next_use))
 
-        # Sleeps for 1 hour and 5 seconds.
-        sleep(3605)
+        # Sleeps for 1 hour.
+        sleep(duration_in_seconds)
     elif purpose == PURPOSE.ASSASSIN:
-        press(0x33)
-        press(0x34)
-        press(0x35)
-        press(0x36)
-        press(0x37)
-        press(0x38)
+        press(0x5A)  # Z
+        press(0x33)  # 3
+        press(0x34)  # 4
+        press(0x35)  # 5
+        press(0x36)  # 6
+        press(0x37)  # 7
+        press(0x38)  # 8
+
+
+ts_in_action = False
+ts_duration_in_seconds = 3600
+next_ts_use = datetime.now()
+
+
+def ts_z_attack():
+    global ts_in_action, next_ts_use
+
+    if datetime.now() >= next_ts_use:
+        sleep(1)
+        # Presses ESC.
+        press(0x1B)
+        # TS slot (0).
+        press(0x30)
+        sleep(1)
+        # Death Knight.
+        for i in range(3):
+            # Scrolls down.
+            mouse.scroll(0, -1)
+            sleep(0.5)
+
+        # Presses enter.
+        press(0x0D)
+        sleep(1)
+        press(0x0D)
+
+        next_ts_use = datetime.now() + timedelta(seconds=ts_duration_in_seconds)
+        print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
+    else:
+        press(0x5A)  # Z
+        press(0x33)  # 3
+        press(0x34)  # 4
+        press(0x35)  # 5
+        press(0x36)  # 6
+        press(0x37)  # 7
+        press(0x38)  # 8
 
 
 win32gui.SetForegroundWindow(hwndChild)
@@ -86,6 +128,7 @@ win32gui.SetForegroundWindow(hwndChild)
 while True:
     # http://kbdedit.com/manual/low_level_vk_list.html
 
-    thread = Thread(target=run())
+    # thread = Thread(target=run())
+    thread = Thread(target=ts_z_attack())
 
-# pyinstaller --onefile C:\Users\undefined\PycharmProjects\gogan\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages
+# pyinstaller --onefile C:\Users\undefined\PycharmProjects\knightonline\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages -n TZA
