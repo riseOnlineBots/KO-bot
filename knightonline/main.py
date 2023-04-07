@@ -14,6 +14,21 @@ class PURPOSE:
     ASSASSIN = 3
 
 
+class KEYBOARD:
+    ENTER = 0x0D,
+    TAB = 0x09,
+    R = 0x52,
+    Z = 0x5A,
+    ZERO = 0x30,
+    TWO = 0x32,
+    THREE = 0x33,
+    FOUR = 0x34,
+    FIVE = 0x35,
+    SIX = 0x36,
+    SEVEN = 0x37,
+    EIGHT = 0x38
+
+
 ts_duration_in_seconds = 3600
 purpose = PURPOSE.ASSASSIN
 
@@ -84,60 +99,59 @@ def ts_use():
     # keep_mouse_in_window()
     # sleep(0.5)
     # TS slot (0).
-    press(0x30)
+    press(KEYBOARD.ZERO)
     sleep(1)
 
     if ts_for_mage:
         # Death Knight.
         scroll(-3)
     else:
-        # Presses TAB.
-        press(0x09)
+        press(KEYBOARD.TAB)
         sleep(0.5)
-        # Scrolls down (Bulture).
+        # Bulture.
         scroll(-1)
         sleep(0.5)
 
-    # Presses enter.
-    press(0x0D)
+    press(KEYBOARD.ENTER)
     sleep(0.5)
-    press(0x0D)
+    press(KEYBOARD.ENTER)
 
 
 def warrior_combo():
-    press(0x32)  # 2
-    press(0x33)  # 3
+    press(KEYBOARD.TWO)
+    press(KEYBOARD.THREE)
+
     sleep(0.68)
-    press(0x52)  # R
+    press(KEYBOARD.R)
     sleep(0.15)
-    press(0x52)  # R
+    press(KEYBOARD.R)
 
 
 def assassin_combo():
-    press(0x33)  # 3
-    press(0x34)  # 4
-    press(0x35)  # 5
-    press(0x36)  # 6
-    press(0x37)  # 7
-    press(0x38)  # 8
-    sleep(0.68)
+    press(KEYBOARD.THREE)
+    press(KEYBOARD.FOUR)
+    press(KEYBOARD.FIVE)
+    press(KEYBOARD.SIX)
+    press(KEYBOARD.SEVEN)
+    press(KEYBOARD.EIGHT)
 
-    press(0x52)  # R
+    sleep(0.68)
+    press(KEYBOARD.R)
     sleep(0.15)
-    press(0x52)  # R
+    press(KEYBOARD.R)
 
 
 def mage_soft_combo():
-    press(0x33)  # 3
-    press(0x34)  # 4
-    press(0x35)  # 5
-    press(0x36)  # 6
-    press(0x37)  # 7
-    press(0x38)  # 8
+    press(KEYBOARD.THREE)
+    press(KEYBOARD.FOUR)
+    press(KEYBOARD.FIVE)
+    press(KEYBOARD.SIX)
+    press(KEYBOARD.SEVEN)
+    press(KEYBOARD.EIGHT)
 
 
 def bp_soft_combo():
-    press(0x32)  # 2
+    press(KEYBOARD.TWO)
 
 
 next_ts_use = datetime.now()
@@ -154,7 +168,7 @@ def ts_with_combo_run():
         print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
     else:
         if datetime.now() >= next_skill_use:
-            # press(0x5A)  # Z
+            # press(KEYBOARD.Z)
             #  mage_soft_combo()
             # bp_soft_combo()
             # warrior_combo()
