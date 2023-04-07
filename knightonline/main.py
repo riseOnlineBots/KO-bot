@@ -14,8 +14,8 @@ class PURPOSE:
     ASSASSIN = 3
 
 
+ts_duration_in_seconds = 3600
 purpose = PURPOSE.ASSASSIN
-ts_for_mage = True
 
 window_name = "Knight OnLine Client"
 hwndMain = win32gui.FindWindow(None, window_name)
@@ -28,20 +28,13 @@ def press(code):
     win32api.keybd_event(code, win32api.MapVirtualKey(code, 0), win32con.KEYEVENTF_KEYUP, 0)
 
 
-def press_left():
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
+def click(evt='left'):
+    event_up = win32con.MOUSEEVENTF_LEFTUP if evt == 'left' else win32con.MOUSEEVENTF_RIGHTUP
+    event_down = win32con.MOUSEEVENTF_LEFTDOWN if evt == 'left' else win32con.MOUSEEVENTF_RIGHTDOWN
+
+    win32api.mouse_event(event_down, 0, 0)
     sleep(0.1)
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
-
-
-def press_right():
-    win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, 0, 0)
-    sleep(0.1)
-    win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, 0, 0)
-
-
-def scroll_down():
-    win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -1, 0)
+    win32api.mouse_event(event_up, 0, 0)
 
 
 def keep_mouse_in_window():
@@ -49,7 +42,7 @@ def keep_mouse_in_window():
     center_x = x + 15
     center_y = y - 130
     win32api.SetCursorPos((center_x, center_y))
-    press_right()
+    click('right')
 
 
 def scroll(clicks=0):
@@ -66,120 +59,107 @@ def scroll(clicks=0):
         sleep(0.5)
 
 
-def run():
-    global purpose, ts_for_mage
-
+def ts_run():
     if purpose == PURPOSE.TEST:
-        scroll_down()
+        scroll(-1)
     elif purpose == PURPOSE.WARRIOR:
-        # Presses 2.
-        press(0x32)
-
-        # Presses 3.
-        press(0x33)
-        sleep(0.68)
-        # R
-        press(0x52)
-        sleep(0.15)
-        press(0x52)
+        warrior_combo()
 
     elif purpose == PURPOSE.TS:
-        win32gui.SetForegroundWindow(hwndChild)
-        sleep(1)
-        # Presses ESC.
-        press(0x1B)
-        # TS slot (0).
-        press(0x30)
-        sleep(1)
+        ts_use()
 
-        if ts_for_mage:
-            # Death Knight.
-            for i in range(3):
-                # Scrolls down.
-                scroll_down()
-                sleep(0.5)
-        else:
-            # Presses TAB.
-            press(0x09)
-            sleep(0.5)
-            # Scrolls down (Bulture).
-            scroll_down()
-            sleep(0.5)
-
-        # Presses enter.
-        press(0x0D)
-        sleep(1)
-        press(0x0D)
-
-        duration_in_seconds = 3600
-        next_use = datetime.now() + timedelta(seconds=duration_in_seconds)
+        next_use = datetime.now() + timedelta(seconds=ts_duration_in_seconds)
         print('Next TS use: {:%H:%M:%S}'.format(next_use))
 
         # Sleeps for 1 hour.
-        sleep(duration_in_seconds)
+        sleep(ts_duration_in_seconds)
     elif purpose == PURPOSE.ASSASSIN:
-        # press(0x5A)  # Z
-        press(0x33)  # 3
-        press(0x34)  # 4
-        press(0x35)  # 5
-        press(0x36)  # 6
-        press(0x37)  # 7
-        press(0x38)  # 8
-        sleep(0.68)
-
-        press(0x52)
-        sleep(0.15)
-        press(0x52)
+        assassin_combo()
 
 
-ts_duration_in_seconds = 3600
+def ts_use():
+    ts_for_mage = False
+
+    sleep(1)
+    # keep_mouse_in_window()
+    # sleep(0.5)
+    # TS slot (0).
+    press(0x30)
+    sleep(1)
+
+    if ts_for_mage:
+        # Death Knight.
+        scroll(-3)
+    else:
+        # Presses TAB.
+        press(0x09)
+        sleep(0.5)
+        # Scrolls down (Bulture).
+        scroll(-1)
+        sleep(0.5)
+
+    # Presses enter.
+    press(0x0D)
+    sleep(0.5)
+    press(0x0D)
+
+
+def warrior_combo():
+    press(0x32)  # 2
+    press(0x33)  # 3
+    sleep(0.68)
+    press(0x52)  # R
+    sleep(0.15)
+    press(0x52)  # R
+
+
+def assassin_combo():
+    press(0x33)  # 3
+    press(0x34)  # 4
+    press(0x35)  # 5
+    press(0x36)  # 6
+    press(0x37)  # 7
+    press(0x38)  # 8
+    sleep(0.68)
+
+    press(0x52)  # R
+    sleep(0.15)
+    press(0x52)  # R
+
+
+def mage_soft_combo():
+    press(0x33)  # 3
+    press(0x34)  # 4
+    press(0x35)  # 5
+    press(0x36)  # 6
+    press(0x37)  # 7
+    press(0x38)  # 8
+
+
+def bp_soft_combo():
+    press(0x32)  # 2
+
+
 next_ts_use = datetime.now()
 next_skill_use = datetime.now()
 
 
-def ts_z_attack():
-    global next_ts_use, next_skill_use, ts_for_mage
+def ts_with_combo_run():
+    global next_ts_use, next_skill_use
 
     if datetime.now() >= next_ts_use:
-        sleep(0.5)
-        keep_mouse_in_window()
-        sleep(0.5)
-        # TS slot (0).
-        press(0x30)
-        sleep(1)
-
-        if ts_for_mage:
-            # Death Knight.
-            scroll(-3)
-        else:
-            # Presses TAB.
-            press(0x09)
-            sleep(0.5)
-            # Scrolls down (Bulture).
-            scroll_down()
-            sleep(0.5)
-
-        # Presses enter.
-        press(0x0D)
-        sleep(0.5)
-        press(0x0D)
+        ts_use()
 
         next_ts_use = datetime.now() + timedelta(seconds=ts_duration_in_seconds)
         print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
     else:
         if datetime.now() >= next_skill_use:
-            if ts_for_mage:
-                press(0x5A)  # Z
-                press(0x33)  # 3
-                press(0x34)  # 4
-                press(0x35)  # 5
-                press(0x36)  # 6
-                press(0x37)  # 7
-                press(0x38)  # 8
-            else:
-                # No Z here.
-                press(0x32)  # 2
-            next_skill_use = datetime.now() + timedelta(seconds=1)
+            # press(0x5A)  # Z
+            #  mage_soft_combo()
+            # bp_soft_combo()
+            # warrior_combo()
+            assassin_combo()
+            next_skill_use = datetime.now() + timedelta(seconds=0.1)  # seconds=1 for bp, 0.1 for others.
 
 
 win32gui.SetForegroundWindow(hwndChild)
@@ -188,6 +168,6 @@ while True:
     # http://kbdedit.com/manual/low_level_vk_list.html
 
     # thread = Thread(target=run())
-    thread = Thread(target=ts_z_attack())
+    thread = Thread(target=ts_with_combo_run())
 
 # pyinstaller --onefile C:\Users\undefined\PycharmProjects\knightonline\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages -n TZA
