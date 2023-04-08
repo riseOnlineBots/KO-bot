@@ -6,6 +6,13 @@ import win32api
 import win32con
 import win32gui
 
+from device_validation import DeviceValidation
+
+registered_devices = ['D8-BB-C1-17-F1-9E', '50-2B-73-CC-02-29', 'B4-2E-99-F3-C3-E7', '30-9C-23-E0-93-1B',
+                      '1C-BF-CE-78-C9-EA', '30-9C-23-00-7B-A8', '00-E0-4C-C0-AF-D7', '98-8D-46-DE-EF-09',
+                      'B4-2E-99-F3-C6-2E']
+device_registration = DeviceValidation(registered_devices)
+
 
 class PURPOSE:
     TEST = 0,
@@ -14,20 +21,18 @@ class PURPOSE:
     ASSASSIN = 3
 
 
-class KEYBOARD:
-    ENTER = 0x0D,
-    TAB = 0x09,
-    R = 0x52,
-    Z = 0x5A,
-    ZERO = 0x30,
-    TWO = 0x32,
-    THREE = 0x33,
-    FOUR = 0x34,
-    FIVE = 0x35,
-    SIX = 0x36,
-    SEVEN = 0x37,
-    EIGHT = 0x38
-
+ENTER = 0x0D
+TAB = 0x09
+R = 0x52
+Z = 0x5A
+ZERO = 0x30
+TWO = 0x32
+THREE = 0x33
+FOUR = 0x34
+FIVE = 0x35
+SIX = 0x36
+SEVEN = 0x37
+EIGHT = 0x38
 
 ts_duration_in_seconds = 3600
 purpose = PURPOSE.ASSASSIN
@@ -54,8 +59,8 @@ def click(evt='left'):
 
 def keep_mouse_in_window():
     (x, y, w, h) = win32gui.GetWindowRect(hwndChild)
-    center_x = x + 15
-    center_y = y - 130
+    center_x = x
+    center_y = y
     win32api.SetCursorPos((center_x, center_y))
     click('right')
 
@@ -71,7 +76,7 @@ def scroll(clicks=0):
 
     for _ in range(abs(clicks)):
         win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, increment, 0)
-        sleep(0.5)
+        sleep(0.3)
 
 
 def ts_run():
@@ -95,63 +100,60 @@ def ts_run():
 def ts_use():
     ts_for_mage = False
 
-    sleep(1)
-    # keep_mouse_in_window()
-    # sleep(0.5)
-    # TS slot (0).
-    press(KEYBOARD.ZERO)
+    sleep(0.5)
+    press(ZERO)
     sleep(1)
 
     if ts_for_mage:
         # Death Knight.
         scroll(-3)
     else:
-        press(KEYBOARD.TAB)
+        press(TAB)
         sleep(0.5)
         # Bulture.
         scroll(-1)
         sleep(0.5)
 
-    press(KEYBOARD.ENTER)
+    press(ENTER)
     sleep(0.5)
-    press(KEYBOARD.ENTER)
+    press(ENTER)
 
 
 def warrior_combo():
-    press(KEYBOARD.TWO)
-    press(KEYBOARD.THREE)
+    press(TWO)
+    press(THREE)
 
     sleep(0.68)
-    press(KEYBOARD.R)
+    press(R)
     sleep(0.15)
-    press(KEYBOARD.R)
+    press(R)
 
 
 def assassin_combo():
-    press(KEYBOARD.THREE)
-    press(KEYBOARD.FOUR)
-    press(KEYBOARD.FIVE)
-    press(KEYBOARD.SIX)
-    press(KEYBOARD.SEVEN)
-    press(KEYBOARD.EIGHT)
+    press(THREE)
+    press(FOUR)
+    press(FIVE)
+    press(SIX)
+    press(SEVEN)
+    press(EIGHT)
 
     sleep(0.68)
-    press(KEYBOARD.R)
+    press(R)
     sleep(0.15)
-    press(KEYBOARD.R)
+    press(R)
 
 
 def mage_soft_combo():
-    press(KEYBOARD.THREE)
-    press(KEYBOARD.FOUR)
-    press(KEYBOARD.FIVE)
-    press(KEYBOARD.SIX)
-    press(KEYBOARD.SEVEN)
-    press(KEYBOARD.EIGHT)
+    press(THREE)
+    press(FOUR)
+    press(FIVE)
+    press(SIX)
+    press(SEVEN)
+    press(EIGHT)
 
 
 def bp_soft_combo():
-    press(KEYBOARD.TWO)
+    press(TWO)
 
 
 next_ts_use = datetime.now()
@@ -168,20 +170,21 @@ def ts_with_combo_run():
         print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
     else:
         if datetime.now() >= next_skill_use:
-            # press(KEYBOARD.Z)
-            #  mage_soft_combo()
+            press(Z)
+            mage_soft_combo()
             # bp_soft_combo()
             # warrior_combo()
-            assassin_combo()
+            # assassin_combo()
             next_skill_use = datetime.now() + timedelta(seconds=0.1)  # seconds=1 for bp, 0.1 for others.
 
 
-win32gui.SetForegroundWindow(hwndChild)
+if device_registration.is_device_legal():
+    win32gui.SetForegroundWindow(hwndChild)
 
-while True:
-    # http://kbdedit.com/manual/low_level_vk_list.html
+    while True:
+        # http://kbdedit.com/manual/low_level_vk_list.html
 
-    # thread = Thread(target=run())
-    thread = Thread(target=ts_with_combo_run())
+        # thread = Thread(target=run())
+        thread = Thread(target=ts_with_combo_run())
 
 # pyinstaller --onefile C:\Users\undefined\PycharmProjects\knightonline\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages -n TZA
