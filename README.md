@@ -1,4 +1,4 @@
-a = priest
-t = mage
-g = warrior
-s = rogue
+a = priest <br />
+t = mage <br />
+g = warrior <br />
+s = rogue <br />
