@@ -140,18 +140,18 @@ def ts_with_combo_run():
     global next_ts_use, next_skill_use
 
     if datetime.now() >= next_ts_use:
-        ts_for_mage = True
+        ts_for_mage = False
         ts_use(ts_for_mage)
 
         next_ts_use = datetime.now() + timedelta(seconds=3600)
         print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
     else:
         if datetime.now() >= next_skill_use:
-            press(Z)
-            mage_soft_combo()
+            # press(Z)
+            # mage_soft_combo()
             # bp_soft_combo()
             # warrior_combo()
-            # assassin_combo()
+            assassin_combo()
             next_skill_use = datetime.now() + timedelta(seconds=0.1)  # seconds=1 for bp, 0.1 for others.
 
 
@@ -173,4 +173,4 @@ if device_registration.is_device_legal():
     thread = Thread(target=run_thread, args=(pause_event,))
     thread.start()
 
-# pyinstaller --onefile C:\Users\undefined\PycharmProjects\knightonline\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages -n TZA
+# pyinstaller --onefile C:\Users\undefined\PycharmProjects\knightonline\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages --key myKey -n TZA
