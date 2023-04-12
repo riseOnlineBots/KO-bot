@@ -19,8 +19,8 @@ def random_number():
 
 def text(str):
     g0 = rgb()
-    # g2 = rgb(0, 100, 0, True) + "" + rgb(100, 255, 100)
-    g2 = rgb(random_number(), random_number(), random_number(), True) + "" + rgb(random_number(), random_number(),
-                                                                                 random_number())
+    g2 = rgb(0, 100, 0, True) + "" + rgb(100, 255, 100)
+    # g2 = rgb(random_number(), random_number(), random_number(), True) + "" + rgb(random_number(), random_number(),
+    #                                                                              random_number())
 
     print(f"{g2}{str}{g0}")
