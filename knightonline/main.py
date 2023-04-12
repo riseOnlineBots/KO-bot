@@ -12,7 +12,7 @@ from device_validation import DeviceValidation
 
 registered_devices = ['D8-BB-C1-17-F1-9E', '50-2B-73-CC-02-29', 'B4-2E-99-F3-C3-E7', '30-9C-23-E0-93-1B',
                       '1C-BF-CE-78-C9-EA', '30-9C-23-00-7B-A8', '00-E0-4C-C0-AF-D7', '98-8D-46-DE-EF-09',
-                      'B4-2E-99-F3-C6-2E', '2C-F0-5D-6E-A8-BF']
+                      'B4-2E-99-F3-C6-2E', '2C-F0-5D-6E-A8-BF', '00-E0-4C-B4-07-CF']
 device_registration = DeviceValidation(registered_devices)
 running_as_admin()
 
@@ -152,7 +152,7 @@ def ts_with_combo_run():
             # bp_soft_combo()
             # warrior_combo()
             # assassin_combo()
-            next_skill_use = datetime.now() + timedelta(seconds=0.05)  # seconds=1 for bp, 0.1 for others.
+            next_skill_use = datetime.now() + timedelta(seconds=0.1)  # seconds=1 for bp, 0.1 for others.
 
 
 def run_thread(pause_event):
