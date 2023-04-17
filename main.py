@@ -35,6 +35,7 @@ FIVE = 0x35
 SIX = 0x36
 SEVEN = 0x37
 EIGHT = 0x38
+NINE = 0x39
 ALT = 0xA4
 
 
@@ -124,26 +125,32 @@ def bp_soft_combo():
     press(TWO)
 
 
+ts_interval = 3600
 next_ts_use = datetime.now()
 next_skill_use = datetime.now()
+next_skill_use_timedelta = 0.1
+mana_interval = 55
+next_mana_use_for_mage = datetime.now() + timedelta(seconds=mana_interval)
 
 
 def ts_with_combo_run(type):
-    global next_ts_use, next_skill_use
+    global next_ts_use, next_skill_use, next_skill_use_timedelta, next_mana_use_for_mage
 
     if datetime.now() >= next_ts_use:
-        ts_for_mage = False
+        ts_for_mage = type == 1
         ts_use(ts_for_mage)
 
-        next_ts_use = datetime.now() + timedelta(seconds=3600)
+        next_ts_use = datetime.now() + timedelta(seconds=ts_interval)
         print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
     else:
         if datetime.now() >= next_skill_use:
-            next_skill_use_timedelta = 0.1
-
             if type == 1:
                 press(Z)
                 mage_soft_combo()
+
+                if datetime.now() >= next_mana_use_for_mage:
+                    press(NINE)
+                    next_mana_use_for_mage = datetime.now() + timedelta(seconds=mana_interval)
             elif type == 2:
                 next_skill_use_timedelta = 1
                 bp_soft_combo()
