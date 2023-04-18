@@ -39,6 +39,14 @@ NINE = 0x39
 ALT = 0xA4
 
 
+class CharacterEnum:
+    MAGE_GOD = 1
+    BP = 2
+    WARRIOR = 3
+    ASSASSIN = 4
+    MAGE_SOFT = 5
+
+
 def press(code):
     win32api.keybd_event(code, win32api.MapVirtualKey(code, 0), 0, 0)
     sleep(.05)
@@ -75,7 +83,9 @@ def ts_use(ts_for_mage=False):
 
     if ts_for_mage:
         # Death Knight.
-        scroll(-3)
+        scroll(-4)
+        press(TAB)
+        scroll(-1)
     else:
         press(TAB)
         sleep(0.5)
@@ -137,26 +147,28 @@ def ts_with_combo_run(type):
     global next_ts_use, next_skill_use, next_skill_use_timedelta, next_mana_use_for_mage
 
     if datetime.now() >= next_ts_use:
-        ts_for_mage = type == 1
+        ts_for_mage = type == CharacterEnum.MAGE_GOD or type == CharacterEnum.MAGE_SOFT
         ts_use(ts_for_mage)
 
         next_ts_use = datetime.now() + timedelta(seconds=ts_interval)
         print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
     else:
         if datetime.now() >= next_skill_use:
-            if type == 1:
-                press(Z)
+            if type == CharacterEnum.MAGE_GOD or type == CharacterEnum.MAGE_SOFT:
+                if type == 1:
+                    press(Z)
+
                 mage_soft_combo()
 
                 if datetime.now() >= next_mana_use_for_mage:
                     press(NINE)
                     next_mana_use_for_mage = datetime.now() + timedelta(seconds=mana_interval)
-            elif type == 2:
+            elif type == CharacterEnum.BP:
                 next_skill_use_timedelta = 1
                 bp_soft_combo()
-            elif type == 3:
+            elif type == CharacterEnum.WARRIOR:
                 warrior_combo()
-            elif type == 4:
+            elif type == CharacterEnum.ASSASSIN:
                 assassin_combo()
 
             next_skill_use = datetime.now() + timedelta(seconds=next_skill_use_timedelta)
@@ -175,11 +187,16 @@ def run_thread(pause_event, bot_type):
 
 if __name__ == '__main__':
     if device_registration.is_device_legal():
-        print('What type do you want to run with TS?\n1 = Mage;\n2 = BP;\n3 = Warrior;\n4 = Assassin')
+        print("What type do you want to run with TS?")
+        print("{} = Mage (God Mode)".format(CharacterEnum.MAGE_GOD))
+        print("{} = BP".format(CharacterEnum.BP))
+        print("{} = Warrior".format(CharacterEnum.WARRIOR))
+        print("{} = Assassin".format(CharacterEnum.ASSASSIN))
+        print("{} = Mage (Soft Mode)".format(CharacterEnum.MAGE_SOFT))
 
         bot_type = int(input('Your answer: '))
 
-        if 1 <= bot_type <= 4:
+        if 1 <= bot_type <= 5:
             win32api.keybd_event(ALT, win32api.MapVirtualKey(ALT, 0), 0, 0)
 
             try:
