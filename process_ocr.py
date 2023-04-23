@@ -12,11 +12,13 @@ def process(image, debug=False):
     texts = []
     reader = Reader(['en'], gpu=True, verbose=False)
 
-    # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     results = reader.readtext(image)
 
     if debug:
         cv2.imshow('Display', image)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            cv2.destroyAllWindows()
 
     for (bbox, text, prob) in results:
         # Displays the OCR'd text and associated probability.

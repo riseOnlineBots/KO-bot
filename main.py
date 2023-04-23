@@ -1,21 +1,27 @@
 import os
 import random
 import re
+import threading
+import warnings
 from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
 
-import cv2
 import win32api
 import win32con
 import win32gui
+from cv2 import cv2
+from pynput.keyboard import Key, Controller
+from pynput.mouse import Button
 
 import keyboard_detector
 import process_ocr
 from admin_privileges import running_as_admin
 from device_validation import DeviceValidation
-from thread_safe_queue import ThreadSafeQueue
 from window_capture import WindowCapture
+
+# Disables UserWarning logs that are coming from torchvision.
+warnings.filterwarnings("ignore", category=UserWarning)
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -25,33 +31,32 @@ registered_devices = ['D8-BB-C1-17-F1-9E', '50-2B-73-CC-02-29', 'B4-2E-99-F3-C3-
 device_registration = DeviceValidation(registered_devices)
 running_as_admin()
 
-keyboard_monitor = keyboard_detector.KeyboardDetector()
-keyboard_monitor.start()
-
 # http://kbdedit.com/manual/low_level_vk_list.html
-ENTER = 0x0D
-TAB = 0x09
-R = 0x52
-Z = 0x5A
-ZERO = 0x30
-TWO = 0x32
-THREE = 0x33
-FOUR = 0x34
-FIVE = 0x35
-SIX = 0x36
-SEVEN = 0x37
-EIGHT = 0x38
-NINE = 0x39
-ALT = 0xA4
-X = 0x58
-MIDDLE_BUTTON = 0x04
+ENTER = Key.enter
+TAB = Key.tab
+R = 'r'
+Z = 'z'
+ZERO = '0'
+TWO = '2'
+THREE = '3'
+FOUR = '4'
+FIVE = '5'
+SIX = '6'
+SEVEN = '7'
+EIGHT = '8'
+NINE = '9'
+ALT = Key.alt_l
+X = 'x'
+S = 's'
+MIDDLE_BUTTON = Button.middle
 
 window_name = "Knight OnLine Client"
 wincapture = WindowCapture(window_name)
 
 prev_coordination = None
 gm_protection = False
-ocr_error_counter = 0
+
+keyboard = Controller()
 
 
 class CharacterEnum:
@@ -63,18 +68,9 @@ class CharacterEnum:
 
 
 def press(code):
-    win32api.keybd_event(code, win32api.MapVirtualKey(code, 0), 0, 0)
+    keyboard.press(code)
     sleep(random.uniform(0.03, 0.10))
-    win32api.keybd_event(code, win32api.MapVirtualKey(code, 0), win32con.KEYEVENTF_KEYUP, 0)
-
-
-def click(evt='left'):
-    event_up = win32con.MOUSEEVENTF_LEFTUP if evt == 'left' else win32con.MOUSEEVENTF_RIGHTUP
-    event_down = win32con.MOUSEEVENTF_LEFTDOWN if evt == 'left' else win32con.MOUSEEVENTF_RIGHTDOWN
-
-    win32api.mouse_event(event_down, 0, 0)
-    sleep(random.uniform(0.1, 0.2))
-    win32api.mouse_event(event_up, 0, 0)
+    keyboard.release(code)
 
 
 def scroll(clicks=0):
@@ -88,13 +84,13 @@ def scroll(clicks=0):
 
     for _ in range(abs(clicks)):
         win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, increment, 0)
-        sleep(random.uniform(0.2, 0.3))
+        sleep(random.uniform(0.2, 0.4))
 
 
 def ts_use(ts_for_mage=False):
     sleep(0.5)
     press(ZERO)
-    sleep(random.uniform(0.9, 1))
+    sleep(random.uniform(0.7, 1))
 
     if ts_for_mage:
         # Death Knight.
@@ -103,25 +99,26 @@ def ts_use(ts_for_mage=False):
         scroll(-1)
     else:
         press(TAB)
-        sleep(0.5)
+        sleep(random.uniform(0.3, 0.6))
         # Bulture.
         scroll(-1)
-        sleep(0.5)
+        sleep(random.uniform(0.4, 0.6))
 
     press(ENTER)
-    sleep(0.5)
-    press(0x1B)
-    sleep(0.5)
-    press(0x1B)
+    sleep(random.uniform(0.3, 0.5))
+    press(Key.esc)
+
+    sleep(random.uniform(0.3, 0.5))
+    press(Key.esc)
 
 
 def warrior_combo():
     press(TWO)
     press(THREE)
 
-    sleep(0.68)
+    sleep(random.uniform(0.55, 0.69))
     press(R)
-    sleep(0.15)
+    sleep(random.uniform(0.10, 0.15))
     press(R)
 
 
@@ -133,9 +130,9 @@ def assassin_combo():
     press(SEVEN)
     press(EIGHT)
 
-    sleep(0.68)
+    sleep(random.uniform(0.55, 0.69))
     press(R)
-    sleep(0.15)
+    sleep(random.uniform(0.10, 0.15))
     press(R)
 
 
@@ -152,6 +149,54 @@ def bp_soft_combo():
     press(TWO)
 
 
+def ocr_info_bar(pause_event):
+    global prev_coordination
+
+    while True:
+        if pause_event.is_set():
+            continue
+
+        # 1360, 768.
+        screenshot = wincapture.get_screenshot()[70:91, 15:230]
+
+        if screenshot is None:
+            sleep(0.5)
+            continue
+
+        scaled_img = cv2.resize(screenshot, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_LINEAR)
+        gray = cv2.cvtColor(scaled_img, cv2.COLOR_BGR2GRAY)
+        results = process_ocr.process(gray, debug=False)
+
+        try:
+            coordination_format = re.compile(".*,")
+            coordination_probabilities = list(filter(coordination_format.match, results))
+
+            pattern = r'([a-zA-Z]+)(\s+)(\d+)(,\d+)'
+            result = re.sub(pattern, r'\1\2\3\4', coordination_probabilities[0])
+            result_list = result.split()
+            coordination = [item for item in result_list if re.search(',', item)]
+            coordination = coordination[-1] if coordination else None
+            print('Coordination check - ', coordination, ' - at {:%H:%M:%S}'.format(datetime.now()))
+
+            if prev_coordination is not None and coordination != prev_coordination:
+                press(S)
+                press(X)
+                print('...GM detected and program paused at {:%H:%M:%S}...'.format(datetime.now()))
+
+                keyboard.press(Key.alt_gr)
+                keyboard.press(Key.ctrl_r)
+                keyboard.release(Key.alt_gr)
+                keyboard.release(Key.ctrl_r)
+
+                prev_coordination = None
+                press(X)
+                continue
+
+            prev_coordination = coordination
+        except Exception as e:
+            print('Error occurred while parsing coordinates. Re-reading...', e)
+
+
 ts_interval = random.uniform(3600, 3602)
 next_ts_use = datetime.now()
 next_skill_use = datetime.now()
@@ -160,122 +205,59 @@ mana_interval = random.uniform(54, 56)
 next_mana_use_for_mage = datetime.now() + timedelta(seconds=mana_interval)
 
 
-def read_screen(text_reader_thread):
-    queue_cleared = False
-
+def run_combo_ts(bot_type, pause_event):
     while True:
-        if not keyboard_monitor.get_combination_active():
-            screenshot = wincapture.get_screenshot()[0:90, 0:200]
+        if pause_event.is_set():
+            continue
 
-            # Scale the image by a factor of 1.5
-            scaled_img = cv2.resize(screenshot, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_LINEAR)
+        global next_ts_use, next_skill_use, next_skill_use_timedelta, next_mana_use_for_mage
 
-            text_reader_thread.put(scaled_img)
+        if datetime.now() >= next_ts_use:
+            ts_for_mage = bot_type == CharacterEnum.MAGE_GOD or bot_type == CharacterEnum.MAGE_SOFT
+            ts_use(ts_for_mage)
 
-            sleep(5)
+            next_ts_use = datetime.now() + timedelta(seconds=ts_interval)
+
+            print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
         else:
-            if not queue_cleared:
-                text_reader_thread.clear()
-                queue_cleared = True
+            if datetime.now() >= next_skill_use:
+                if bot_type == CharacterEnum.MAGE_GOD or bot_type == CharacterEnum.MAGE_SOFT:
+                    if bot_type == CharacterEnum.MAGE_GOD:
+                        press(Z)
 
+                    mage_soft_combo()
 
-def ocr_info_bar(text_reader_thread):
-    global prev_coordination, ocr_error_counter
+                    if datetime.now() >= next_mana_use_for_mage:
+                        press(NINE)
 
-    while True:
-        if not keyboard_monitor.get_combination_active():
-            screenshot = text_reader_thread.get()
+                        next_mana_use_for_mage = datetime.now() + timedelta(seconds=mana_interval)
+                elif bot_type == CharacterEnum.BP:
+                    next_skill_use_timedelta = random.uniform(1, 1.2)
+                    bp_soft_combo()
+                elif bot_type == CharacterEnum.WARRIOR:
+                    warrior_combo()
+                elif bot_type == CharacterEnum.ASSASSIN:
+                    assassin_combo()
 
-            if screenshot is None:
-                sleep(1)
-                continue
-
-            gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-            results = process_ocr.process(gray, debug=False)
-            # hp = results[1]
-            # mp = results[2]
-
-            try:
-                coordination_format = re.compile(".*,")
-                coordination_probabilities = list(filter(coordination_format.match, results))
-
-                pattern = r'([a-zA-Z]+)(\s+)(\d+)(,\d+)'
-                result = re.sub(pattern, r'\1\2\3\4', coordination_probabilities[0])
-                result = result.split()
-
-                coordination = result[1] if len(result) > 1 else result[0]
-                print('Coordination check - ', coordination, ' - at {:%H:%M:%S}'.format(datetime.now()))
-
-                if prev_coordination is not None and coordination != prev_coordination:
-                    keyboard_monitor.set_combination_active(True)
-                    press(X)
-                    print('...GM detected and program paused at {:%H:%M:%S}...'.format(datetime.now()))
-
-                prev_coordination = coordination
-            except Exception as e:
-                print('Error occurred while parsing coordinates. Re-reading...', e)
-                print('Rotating camera angle.')
-                press(MIDDLE_BUTTON)
-                ocr_error_counter += 1
-                # ocr_info_bar(text_reader_thread)
-
-                if ocr_error_counter > 4:
-                    print('Big problem...')
-                    break
-
-            sleep(5)
-
-            # key = cv2.waitKey(1) & 0xFF
-
-            # if key == ord("q"):
-            #     break
-
-
-def run_combo_ts(bot_type):
-    while True:
-        if not keyboard_monitor.get_combination_active():
-            global next_ts_use, next_skill_use, next_skill_use_timedelta, next_mana_use_for_mage
-
-            if datetime.now() >= next_ts_use:
-                ts_for_mage = bot_type == CharacterEnum.MAGE_GOD or bot_type == CharacterEnum.MAGE_SOFT
-                ts_use(ts_for_mage)
-
-                next_ts_use = datetime.now() + timedelta(seconds=ts_interval)
-
-                print('Next TS use: {:%H:%M:%S}'.format(next_ts_use))
-            else:
-                if datetime.now() >= next_skill_use:
-                    if bot_type == CharacterEnum.MAGE_GOD or bot_type == CharacterEnum.MAGE_SOFT:
-                        if bot_type == CharacterEnum.MAGE_GOD:
-                            press(Z)
-
-                        mage_soft_combo()
-
-                        if datetime.now() >= next_mana_use_for_mage:
-                            press(NINE)
-
-                            next_mana_use_for_mage = datetime.now() + timedelta(seconds=mana_interval)
-                    elif bot_type == CharacterEnum.BP:
-                        next_skill_use_timedelta = random.uniform(1, 1.2)
-                        bp_soft_combo()
-                    elif bot_type == CharacterEnum.WARRIOR:
-                        warrior_combo()
-                    elif bot_type == CharacterEnum.ASSASSIN:
-                        assassin_combo()
-
-                    next_skill_use = datetime.now() + timedelta(seconds=next_skill_use_timedelta)
+                next_skill_use = datetime.now() + timedelta(seconds=next_skill_use_timedelta)
 
 
 def start():
-    text_reader_thread = ThreadSafeQueue()
-
-    Thread(target=read_screen, args=(text_reader_thread,)).start()
+    pause_event = threading.Event()
 
     if gm_protection:
-        Thread(target=ocr_info_bar, args=(text_reader_thread,)).start()
+        ocr_thread = Thread(target=ocr_info_bar, args=(pause_event,))
+        ocr_thread.start()
 
-    Thread(target=run_combo_ts, args=(bot_type,)).start()
+    ts_combo_thread = Thread(target=run_combo_ts, args=(bot_type, pause_event))
+    ts_combo_thread.start()
 
+    keyboard_detector.KeyboardDetector(pause_event)
+
+
+# ocr - 1.6.2
+# torch 1.10.2
+# torchvision 0.11.3
 
 if __name__ == '__main__':
     if device_registration.is_device_legal():
@@ -294,15 +276,15 @@ if __name__ == '__main__':
         bot_type = int(input('Your answer: '))
 
         if 1 <= bot_type <= 5:
-            win32api.keybd_event(ALT, win32api.MapVirtualKey(ALT, 0), 0, 0)
+            keyboard.press(ALT)
 
             try:
                 hwnd_main = win32gui.FindWindow(None, window_name)
                 hwnd_child = win32gui.GetWindow(hwnd_main, win32con.GW_CHILD)
                 win32gui.SetForegroundWindow(hwnd_child)
             finally:
-                win32api.keybd_event(ALT, win32api.MapVirtualKey(ALT, 0), win32con.KEYEVENTF_KEYUP, 0)
+                keyboard.release(ALT)
 
-                Thread(target=start).start()
+            start()
 
-# pyinstaller --onefile C:\Users\undefined\PycharmProjects\knightonline\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39-32\Lib\site-packages --key myKey -n TZA
+# pyinstaller --onefile .\main.py --paths C:\Users\undefined\AppData\Local\Programs\Python\Python39\Lib\site-packages --key myKey -n wq
