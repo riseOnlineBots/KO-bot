@@ -41,5 +41,8 @@ class KeyboardDetector:
             on_press=self._on_press, on_release=self._on_release)
         listener.start()
 
+    def set_combination_active(self, combination_active):
+        self._combination_active = combination_active
+
     def get_combination_active(self):
         return self._combination_active
